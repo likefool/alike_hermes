@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identity Solution | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold text-blue-600">Project Beta: Identity</h1>
+            <div id="nav-links">
+                <!-- Will be populated by JS -->
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="container mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg max-w-3xl">
+        <div id="content-area">
+            <!-- Content will be dynamically injected here -->
+            <div class="text-center py-10">
+                <h2 class="text-2xl font-semibold mb-4">Welcome to the Identity Solution</h2>
+                <p class="text-gray-600 mb-6">Please sign in to verify your identity and access the dashboard.</p>
+                <a href="/login" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition">Login with Social Account</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const contentArea = document.getElementById('content-area');
+        const navLinks = document.getElementById('nav-links');
+
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/echo');
+                const data = await response.json();
+
+                if (data.status === 'authenticated') {
+                    await renderDashboard(data);
+                } else {
+                    renderLanding();
+                }
+            } catch (error) {
+                console.error("Auth check failed", error);
+                renderLanding();
+            }
+        }
+
+        function renderLanding() {
+            contentArea.innerHTML = `
+                <div class="text-center py-10">
+                    <h2 class="text-2xl font-semibold mb-4">Welcome to the Identity Solution</h2>
+                    <p class="text-gray-600 mb-6">Please sign in to verify your identity and access the dashboard.</p>
+                    <a href="/login" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition">Login with Social Account</a>
+                </div>
+            `;
+            navLinks.innerHTML = '';
+        }
+
+        async function renderDashboard(echoData) {
+            // Update Nav
+            navLinks.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <span class="text-sm text-gray-600">User: <strong class="text-blue-600">${echoData.principal}</strong></span>
+                    <a href="/logout" class="text-red-500 text-sm hover:underline">Logout</a>
+                </div>
+            `;
+
+            // 1. Show the Echo Data (The session context)
+            // 2. Fetch the Local Profile (The SQLite sync check)
+            
+            contentArea.innerHTML = `
+                <div class="space-y-8">
+                    <div class="text-center">
+                        <h2 class="text-2xl font-bold text-gray-800">Authenticated Dashboard</h2>
+                        <p class="text-gray-500">Verification Complete</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Section 1: Session/OAuth2 Data -->
+                        <div class="bg-blue-50 border border-blue-200 p-5 rounded-lg shadow-sm">
+                            <h3 class="font-bold text-blue-800 mb-3 flex items-center gap-2">
+                                <span>🌐</span> Session Identity (OAuth2)
+                            </h3>
+                            <p class="text-xs text-blue-600 mb-2 italic">Data from the social provider via session</p>
+                            <pre class="bg-gray-900 text-blue-300 p-3 rounded text-xs overflow-auto max-h-48">${JSON.stringify(echoData, null, 2)}</pre>
+                        </div>
+
+                        <!-- Section 2: Local Database Data -->
+                        <div id="local-profile-container" class="bg-green-50 border border-green-200 p-5 rounded-lg shadow-sm">
+                            <h3 class="font-bold text-green-800 mb-3 flex items-center gap-2">
+                                <span>💾</span> Local Profile (SQLite)
+                            </h3>
+                            <div id="local-profile-content">
+                                <div class="animate-pulse flex space-x-4">
+                                    <div class="flex-1 space-y-4 py-1">
+                                        <div class="h-4 bg-green-200 rounded w-3/4"></div>
+                                        <div class="space-y-2">
+                                            <div class="h-4 bg-green-200 rounded"></div>
+                                            <div class="h-4 bg-green-200 rounded w-5/6"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Fetch and render the Local Profile from SQLite
+            try {
+                const profileResponse = await fetch('/api/user/profile');
+                const profileData = await profileResponse.json();
+                renderLocalProfile(profileData);
+            } catch (err) {
+                document.getElementById('local-profile-content').innerHTML = `
+                    <p class="text-xs text-red-600 italic">Error loading local profile: ${err.message}</p>
+                `;
+            }
+        }
+
+        function renderLocalProfile(data) {
+            const container = document.getElementById('local-profile-content');
+            if (data.status === 'success') {
+                container.innerHTML = `
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between border-b border-green-100 pb-1">
+                            <span class="text-green-700 font-medium">Local ID:</span>
+                            <span class="font-mono text-green-900">${data.local_id}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-green-100 pb-1">
+                            <span class="text-green-700 font-medium">Username:</span>
+                            <span class="font-mono text-green-900">${data.local_username}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-green-100 pb-1">
+                            <span class="text-green-700 font-medium">Email:</span>
+                            <span class="font-mono text-green-900">${data.local_email}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-green-100 pb-1">
+                            <span class="text-green-700 font-medium">Full Name:</span>
+                            <span class="font-mono text-green-900">${data.local_fullName}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-green-100 pb-1">
+                            <span class="text-green-700 font-medium">Provider:</span>
+                            <span class="font-mono text-green-900">${data.local_provider}</span>
+                        </div>
+                        <div class="text-[10px] text-green-600 pt-2 italic">
+                            Sync Timestamp: ${data.created_at}
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                         <p class="text-[10px] text-green-700 font-bold uppercase tracking-wid way-widest">Identity Verified via SQLite</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <p class="text-xs text-red-600 italic">Error: ${data.message || 'Unknown error'}</p>
+                `;
+            }
+        }
+
+        window.onload = checkAuth;
+    </script>
+</body>
+</html>
