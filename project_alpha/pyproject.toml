@@ -1,0 +1,29 @@
+# pyproject.toml for Project Alpha
+
+[project]
+name = "project-alpha"
+version = "0.1.0"
+description = "A secure note-taking application with a decoupled architecture."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0.0",
+]
+
+[tool.uv]
+# Configuration for uv-specific behaviors
+dev-dependencies = [
+    "pytest>=8.0.0",
+    "requests>=2.31.0",
+    "black>=24.0.0",
+    "ruff>=0.1.0",
+]
+
+[tool.ruff]
+# Linter/Formatter config
+line-length = 88
+select = ["E", "F", "I"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

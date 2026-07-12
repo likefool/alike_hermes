@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteVault SPA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-900">
+
+    <div class="max-w-4xl mx-auto p-6">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-extrabold text-indigo-600">NoteVault</h1>
+            <div class="text-sm text-gray-500">API: http://localhost:5000/notes</div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Left: Create/Edit Panel -->
+            <div class="md:col-span-1">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 sticky top-6">
+                    <h2 id="form-title" class="text-xl font-semibold mb-4">Create Note</h2>
+                    <input type="hidden" id="note-id">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                            <input type="text" id="title-input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Enter title...">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                            <textarea id="content-input" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Write your thoughts..."></textarea>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="saveNote()" id="save-btn" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">Save</button>
+                            <button onclick="resetForm()" id="cancel-btn" class="hidden flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-300 transition">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: List/Search Panel -->
+            <div class="md:col-span-2 space-y-4">
+                <div class="relative">
+                    <input type="text" id="search-input" oninput="searchNotes()" class="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="🔍 Search notes by title or content...">
+                    <span class="absolute left-3 top-3 text-gray-400">🔍</span>
+                </div>
+
+                <div id="notes-list" class="space-y-4">
+                    <!-- Notes will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:5000/notes";
+
+        // On Load
+        window.onload = () => {
+            fetchNotes();
+        };
+
+        async function fetchNotes(query = '') {
+            const listElement = document.getElementById('notes-list');
+            const url = query ? `${API_BASE}?q=${encodeURIComponent(query)}` : API_BASE;
+            
+            try {
+                const response = await fetch(url);
+                const notes = await response.json();
+                renderNotes(notes);
+            } catch (err) {
+                listElement.innerHTML = `<div class="text-red-500 p-4 bg-red-50 rounded-lg border border-red-200">Error loading notes. Is the API running?</div>`;
+            }
+        }
+
+        function renderNotes(notes) {
+            const listElement = document.getElementById('notes-list');
+            if (!notes || notes.length === 0) {
+                listedEmptyState(listElement);
+                return;
+            }
+
+            listElement.innerHTML = notes.map(note => {
+                // SECURE: Use textContent for all user-supplied data to prevent XSS
+                const card = document.createElement('div');
+                card.className = 'bg-white p-5 rounded-xl shadow-sm border border-gray-200 hover:border-indigo-300 transition group';
+                
+                const titleEl = document.createElement('h3');
+                titleEl.className = 'text-lg font-bold text-gray-800 mb-2';
+                titleEl.textContent = note.title;
+
+                const contentEl = document.createElement('p');
+                contentEl.className = 'text-gray-600 whitespace-pre-wrap mb-4';
+                contentEl.textContent = note.content;
+
+                const footerEl = document.createElement('div');
+                footerEl.className = 'flex justify-between items-center text-xs text-gray-400 mt-2';
+                
+                const dateEl = document.createElement('span');
+                dateEl.textContent = new Date(note.created_at).toLocaleString();
+
+                const actionsEl = document.createElement('div');
+                actionsEl.className = 'flex gap-3 opacity-0 group-hover:opacity-100 transition';
+                
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                edit_click_handler(editBtn, note);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                delete_click_handler(deleteBtn, note.id);
+
+                actionsEl.appendChild(editBtn);
+                actionsEl.appendChild(deleteBtn);
+                footerEl.appendChild(dateEl);
+                footerEl.appendChild(actionsEl);
+
+                card.appendChild(titleEl);
+                card.appendChild(contentEl);
+                card.appendChild(footerEl);
+
+                return card.outerHTML; 
+                // Note: The above line is a shortcut. For full-scale apps, 
+                // use direct DOM manipulation to avoid all innerHTML risks.
+                // However, for this single-file demo, we will use a safer 
+                // approach in the final version.
+            }).join('');
+
+            // Re-patching logic to use safer DOM methods for the final version
+            // To avoid the issues of outerHTML, we'll use a better template method below.
+        }
+
+        // Updated renderNotes to be 100% XSS-safe using DOM methods
+        function renderNotesSecure(notes) {
+            const listElement = document.getElementById('notes-list');
+            listElement.innerHTML = ''; // Clear list
+
+            if (!notes || notes.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.className = 'text-center py-10 text-gray-400 italic';
+                emptyMsg.textContent = 'No notes found.';
+                listElement.appendChild(emptyMsg);
+                return;
+            }
+
+            notes.forEach(note => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-5 rounded-xl shadow-sm border border-gray-200 hover:border-indigo-300 transition group';
+                
+                const titleEl = document.createElement('h3');
+                titleFlavored(titleEl, note.title, 'text-lg font-bold text-gray-800 mb-2');
+
+                const contentEl = document.createElement('p');
+                contentEl.className = 'text-gray-600 whitespace-pre-wrap mb-4';
+                contentEl.textContent = note.content;
+
+                const footerEl = document.createElement('div');
+                footerEl.className = 'flex justify-between items-center text-xs text-gray-400 mt-3 pt-3 border-t border-gray-50';
+                
+                const dateEl = document.createElement('span');
+                dateEl.textContent = new Date(note.created_at).toLocaleString();
+
+                const actionsEl = document.createElement('div');
+                actionsEl.className = 'flex gap-3 opacity-0 group-hover:opacity-100 transition cursor-pointer';
+                
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                editBtn.className = 'text-indigo-600 hover:underline font-medium';
+                editBtn.onclick = () => editNote(note.id, note.title, note.content);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.className = 'text-red-500 hover:underline font-medium';
+                deleteBtn.onclick = () => deleteNote(note.id);
+
+                actionsEl.appendChild(editBtn);
+                actionsEl.appendChild(deleteBtn);
+                footerEl.appendChild(dateEl);
+                footerEl.appendChild(actionsEl);
+
+                card.appendChild(titleEl);
+                card.appendChild(contentEl);
+                card.appendChild(footerEl);
+                listElement.appendChild(card);
+            });
+        }
+
+        function titleFlavored(el, text, cls) {
+            el.className = cls;
+            el.textContent = text;
+        }
+
+        function emptyState(listElement) {
+            listElement.innerHTML = '<div class="text-center py-10 text-gray-400 italic">No notes found.</div>';
+        }
+
+        // RE-DEFINING THE CORE LOGIC
+        async function fetchNotes(query = '') {
+            const listElement = document.getElementById('notes-list');
+            const url = query ? `${API_BASE}?q=${encodeURIComponent(query)}` : API_BASE;
+            try {
+                const response = await fetch(url);
+                const notes = await response.json();
+                renderNotesSecure(notes);
+            } catch (err) {
+                listElement.innerHTML = `<div class="text-red-500 p-4 bg-red-50 rounded-lg border border-red-200">Error loading notes. Is the API running?</div>`;
+            }
+        }
+
+        function editNote(id, title, content) {
+            document.getElementById('form-title').innerText = "Edit Note";
+            document.getElementById('note-id').value = id;
+            document.getElementById('title-input').value = title;
+            document.getElementById('content-input').value = content;
+            document.getElementById('save-btn').innerText = "Update";
+            document.getElementById('cancel-btn').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('form-title').innerText = "Create Note";
+            document.getElementById('note-id').value = "";
+            document.getElementById('title-input').value = "";
+            document.getElementById('content-input').value = "";
+            document.getElementById('save-btn').innerText = "Save";
+            document.getElementById('cancel-btn').classList.add('hidden');
+        }
+
+        async function saveNote() {
+            const id = document.getElementById('note-id').value;
+            const title = document.getElementById('title-input').value;
+            const content = document.getElementById('content-input').value;
+
+            if (!title) {
+                alert("Title is required!");
+                return;
+            }
+
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API_BASE}/${id}` : API_BASE;
+            const body = JSON.stringify({ title, content });
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: body
+                });
+
+                if (response.ok) {
+                    resetForm();
+                    fetchNotes();
+                } else {
+                    const err = await response.json();
+                    alert(`Error: ${err.error}`);
+                }
+            } catch (err) {
+                alert("Failed to connect to API.");
+            }
+        }
+
+        async function deleteNote(id) {
+            if (!confirm("Are you sure you want to delete this note?")) return;
+            try {
+                const response = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+                if (response.ok) fetchNotes();
+                else alert("Delete failed.");
+            } catch (err) {
+                alert("Error deleting note.");
+            }
+        }
+
+        function searchNotes() {
+            const query = document.getElementById('search-input').value;
+            fetchNotes(query);
+        }
+    </script>
+</body>
+</html>
