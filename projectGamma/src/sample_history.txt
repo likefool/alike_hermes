@@ -1,0 +1,1 @@
+This is a sample document for project Gamma. It contains information about the history of the Gamma constellation. The Gamma constellation was discovered in 1924 and is known for its bright blue stars. The primary star, Gamma-1, is a supergiant. This text is used to test the RAG system's ability to retrieve specific facts.

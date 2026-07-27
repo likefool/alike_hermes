@@ -1,0 +1,1 @@
+The project Gamma architecture is built on a microservices framework. It uses a distributed database for high availability and a messaging queue for asynchronous tasks. The core logic is written in Python, while the frontend is a React application. Security is handled via OAuth2 and JWT tokens. This document serves as a technical specification for the project.
