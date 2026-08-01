@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | GammaStore</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 font-sans">
+    <nav class="bg-indigo-700 text-white shadow-lg p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-tight"><i class="fas fa-cog mr-2"></i>Gamma Admin</h1>
+            <a href="index.html" class="text-sm bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded transition">
+                <i class</code>
+            <a href="index.html" class="text-sm bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded transition">
+                <i class="fas fa-shopping-cart mr-2"></i>View Store
+            </a>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- Category Management -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">Manage Categories</h2>
+                    <button onclick="showCategoryModal()" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-500">
+                        <i class="fas fa-plus mr-1"></i> New Category
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b text-gray-600 text-sm">
+                                <th class="py-2">ID</th>
+                                <th class="py-2">Name</th>
+                                <th class="py-2 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="category-list" class="text-gray-700">
+                            <!-- Categories injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Product Management -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">Manage Products</h2>
+                    <button onclick="showProductModal()" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-500">
+                        <i class="fas fa-plus mr-1"></i> New Product
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b text-gray-600 text-sm">
+                                <th class="py-2">Product</th>
+                                <th class="py-2">Price</th>
+                                <th class="py-2 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-list" class="text-gray-700">
+                            <!-- Products injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- MODALS (Hidden by default) -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <!-- Category Modal -->
+        <div id="category-modal" class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md hidden">
+            <h3 class="text-xl font-bold mb-4">Add Category</h3>
+            <form id="category-form">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Name</label>
+                    <input type="text" id="cat-name" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Description</label>
+                    <textarea id="cat-desc" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeModals()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500">Save Category</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Product Modal -->
+        <div id="product-modal" class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md hidden">
+            <h3 class="text-xl font-bold mb-4">Add Product</h3>
+            <form id="product-form">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Name</label>
+                    <input type="text" id="prod-name" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Price</label>
+                    <input type="number" step="0.01" id="prod-price" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Category ID</label>
+                    <input type="number" id="prod-cat-id" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Description</label>
+                    <textarea id="prod-desc" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeModals()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500">Save Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:8000";
+        const overlay = document.getElementById('modal-overlay');
+        const catModal = document.getElementById('category-modal');
+        const prodModal = document.getElementById('product-modal');
+
+        function showCategoryModal() {
+            overlay.classList.remove('hidden');
+            catModal.classList.remove('hidden');
+            prodModal.classList.add('hidden');
+        }
+
+        function showProductModal() {
+            overlay.classList.remove('hidden');
+            prodModal.classList.remove('hidden');
+            catModal.classList.add('hidden');
+        }
+
+        function closeModals() {
+            overlay.classList.add('hidden');
+            catModal.classList.add('hidden');
+            prodModal.classList.add('hidden');
+        }
+
+        // Mock fetch for structure - real logic will be in api_integration.js
+        async function fetchData() {
+            console.log("Data fetch trigger placeholder");
+        }
+
+        // Initialize
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
